@@ -4,6 +4,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft } from 'lucide-react';
+import Head from 'next/head';
 
 interface Metric {
   animal_col: string;
@@ -190,6 +191,9 @@ const EmissionDashboard = () => {
 
   const DetailView = ({ recipeData }: { recipeData: RecipeData }) => (
     <div className="space-y-6">
+      <Head>
+        <title>Recipe Comparison - {recipeData.animal_recipe} vs {recipeData.plant_recipe}</title>
+      </Head>
       <div className="flex items-center gap-4">
         <button
           onClick={() => setSelectedRecipe(undefined)}
@@ -252,6 +256,7 @@ const EmissionDashboard = () => {
 
   return (
     <Card className="h-full w-full">
+      <title>Emissions Dashboard</title>
       <CardHeader>
         <CardTitle className="flex justify-between items-center">
           <div>
