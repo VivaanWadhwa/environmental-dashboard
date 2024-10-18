@@ -83,6 +83,14 @@ const EmissionDashboard = () => {
 
   const [selectedMetric, setSelectedMetric] = useState<string>("GHG Emission");
 
+  const metricDescriptions: { [key: string]: string } = {
+    "GHG Emission": "Greenhouse gas (GHG) emissions contribute to climate change. Here, you can compare the GHG emissions of animal-based and plant-based recipes, helping you understand more environmentally friendly choices.",
+    "Nitrogen Lost": "Nitrogen loss can negatively impact ecosystems and water quality. Compare the nitrogen lost during the production of animal-based and plant-based foods.",
+    "Freshwater Withdrawals": "Freshwater withdrawal measures the amount of water used in food production. Use this data to understand the water demands of different diets.",
+    "Stress-Weighted Water Use": "Stress-weighted water use accounts for water use in areas of water scarcity, reflecting the pressure on local water resources.",
+    "Land Use": "Land use indicates how much land is required to produce a given food item. Reducing land use is critical for preserving natural habitats and biodiversity."
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -227,13 +235,13 @@ const EmissionDashboard = () => {
             <Bar
               dataKey="animal"
               name="Animal-based"
-              fill="#ff6b6b"
+              fill= {metrics[selectedMetric].color.animal}
               radius={[0, 4, 4, 0]}
             />
             <Bar
               dataKey="plant"
               name="Plant-based"
-              fill="#51cf66"
+              fill={metrics[selectedMetric].color.plant}
               radius={[0, 4, 4, 0]}
             />
           </BarChart>
@@ -242,83 +250,62 @@ const EmissionDashboard = () => {
     </div>
   );
 
-  if (loading) {
-    return (
-      <Card className="w-full max-w-6xl mx-auto p-6">
-        <CardContent className="flex items-center justify-center h-[400px]">
-          <p>Loading data...</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (error) {
-    return (
-      <Card className="w-full max-w-6xl mx-auto p-6">
-        <CardContent className="flex items-center justify-center h-[400px]">
-          <p className="text-red-500">{error}</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
-    <div className="w-full max-w-6xl mx-auto p-6 space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Environmental Impact Comparison</CardTitle>
-          {!selectedRecipe && (
-            <div className="w-72">
-              <Select value={selectedMetric} onValueChange={setSelectedMetric}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a metric" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.keys(metrics).map((metric) => (
-                    <SelectItem key={metric} value={metric}>
-                      {metric}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-        </CardHeader>
-        <CardContent>
-          {selectedRecipe ? (
-            <DetailView recipeData={selectedRecipe} />
-          ) : (
-            <div className="h-[400px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={transformDataForOverview(data, selectedMetric)}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                  onClick={(state) => handleBarClick(state)}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis label={{ value: metrics[selectedMetric].unit, angle: -90, position: 'insideLeft' }} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Legend />
-                  <Bar
-                    dataKey="animal"
-                    name="Animal-based"
-                    fill={metrics[selectedMetric].color.animal}
-                    radius={[4, 4, 0, 0]}
-                  />
-                  <Bar
-                    dataKey="plant"
-                    name="Plant-based"
-                    fill={metrics[selectedMetric].color.plant}
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+    <Card className="h-full w-full">
+      <CardHeader>
+        <CardTitle className="flex justify-between items-center">
+          <div>
+            <h2 className="text-lg font-semibold">Emissions Dashboard</h2>
+            <p className="text-gray-500">Explore the emissions data of different recipes.</p>
+          </div>
+          <Select onValueChange={setSelectedMetric} defaultValue={selectedMetric}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select Metric" />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.keys(metrics).map(metricName => (
+                <SelectItem key={metricName} value={metricName}>{metricName}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <p>Loading...</p>
+        ) : error ? (
+          <p>{error}</p>
+        ) : (
+          <div>
+            {selectedRecipe ? (
+              <DetailView recipeData={selectedRecipe} />
+            ) : (
+              <div>
+                <p className="text-center mb-4">
+                  Hover over the chart to explore emissions data by recipe type.
+                </p>
+                <div className="h-[400px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={transformDataForOverview(data, selectedMetric)} onClick={handleBarClick}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Legend />
+                      <Bar dataKey="animal" fill={metrics[selectedMetric].color.animal} />
+                      <Bar dataKey="plant" fill={metrics[selectedMetric].color.plant} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                <p className="mt-4 text-sm text-gray-500">
+                  {metricDescriptions[selectedMetric]}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 
