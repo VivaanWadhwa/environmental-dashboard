@@ -5,13 +5,50 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft } from 'lucide-react';
 
-const EmissionDashboard = () => {
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [selectedRecipe, setSelectedRecipe] = useState(null);
+interface Metric {
+  animal_col: string;
+  plant_col: string;
+  unit: string;
+  color: { animal: string; plant: string };
+}
 
-  const metrics = {
+interface Metrics {
+  [key: string]: Metric;
+}
+
+interface RecipeData {
+  id: number;
+  name: string;
+  animal: number;
+  plant: number;
+  animal_recipe: string;
+  plant_recipe: string;
+}
+
+interface csvData {
+  animal_recipe: string,
+  animal_recipe_ID: string,
+  plant_recipe: string,
+  plant_recipe_ID:  string,
+  animal_GHG_Emission: number;
+  plant_GHG_Emission: number;
+  animal_N_lost: number;
+  plant_N_lost: number;
+  animal_Freshwater_Withdrawals: number;
+  plant_Freshwater_Withdrawals: number;
+  animal_Stress_Weighted_Water_Use: number;
+  plant_Stress_Weighted_Water_Use: number;
+  animal_Land_Use: number;
+  plant_Land_Use: number;
+}
+
+const EmissionDashboard = () => {
+  const [data, setData] = useState<csvData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [selectedRecipe, setSelectedRecipe] = useState<RecipeData>();
+
+  const metrics: Metrics = {
     "GHG Emission": {
       animal_col: "animal_GHG Emission (g) / 100g",
       plant_col: "plant_GHG Emission (g) / 100g",
@@ -44,7 +81,7 @@ const EmissionDashboard = () => {
     }
   };
 
-  const [selectedMetric, setSelectedMetric] = useState("GHG Emission");
+  const [selectedMetric, setSelectedMetric] = useState<string>("GHG Emission");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -55,13 +92,28 @@ const EmissionDashboard = () => {
         
         const rows = csvText.split('\n');
         const headers = rows[0].split(',');
-        const parsedData = rows.slice(1).map(row => {
+        const parsedData: csvData[] = rows.slice(1).map(row => {
           const values = row.split(',');
-          const rowData = {};
+          const rowData: csvData = {
+            animal_recipe: '',
+            animal_recipe_ID: '',
+            plant_recipe: '',
+            plant_recipe_ID: '',
+            animal_GHG_Emission: 0,
+            plant_GHG_Emission: 0,
+            animal_N_lost: 0,
+            plant_N_lost: 0,
+            animal_Freshwater_Withdrawals: 0,
+            plant_Freshwater_Withdrawals: 0,
+            animal_Stress_Weighted_Water_Use: 0,
+            plant_Stress_Weighted_Water_Use: 0,
+            animal_Land_Use: 0,
+            plant_Land_Use: 0,
+          };
           headers.forEach((header, index) => {
             const value = values[index];
             const parsedValue = parseFloat(value);
-            rowData[header.trim()] = isNaN(parsedValue) ? value : parsedValue;
+            (rowData[header.trim() as keyof csvData] as unknown) = isNaN(parsedValue) ? value : parsedValue;
           });
           return rowData;
         });
@@ -77,34 +129,44 @@ const EmissionDashboard = () => {
     fetchData();
   }, []);
 
-  const transformDataForOverview = (rawData, metric) => {
+  const transformDataForOverview = (
+    rawData: csvData[],
+    metric: keyof Metrics
+  ): Array<{
+    id: number;
+    name: string;
+    animal: number;
+    plant: number;
+    animal_recipe: string;
+    plant_recipe: string;
+  }> => {
     return rawData.map((item, index) => ({
       id: index,
-      name: ``,
-      animal: item[metrics[metric].animal_col],
-      plant: item[metrics[metric].plant_col],
+      name: '', // You can set this value based on your requirements
+      animal: parseFloat(item[metrics[metric].animal_col as keyof csvData] as unknown as string),
+      plant: parseFloat(item[metrics[metric].plant_col as keyof csvData] as unknown as string),
       animal_recipe: item.animal_recipe,
       plant_recipe: item.plant_recipe,
     }));
   };
+  
 
-  const transformDataForDetail = (recipeData) => {
+  const transformDataForDetail = (recipeData: csvData) => {
     return Object.keys(metrics).map(metricName => ({
       name: metricName,
-      animal: recipeData[metrics[metricName].animal_col],
-      plant: recipeData[metrics[metricName].plant_col],
+      animal: recipeData[metrics[metricName as keyof Metrics].animal_col as keyof csvData],
+      plant: recipeData[metrics[metricName as keyof Metrics].plant_col as keyof csvData],
       unit: metrics[metricName].unit
     }));
   };
 
-  const handleBarClick = (data) => {
-    if (data && data.activePayload) {
-      const recipeId = data.activePayload[0].payload.id;
+  const handleBarClick = (data: any) => {
+    if (data && data.activePayload && data.activePayload.length) {
       setSelectedRecipe(data.activePayload[0].payload);
     }
   };
 
-  const CustomTooltip = ({ active, payload, label }) => {
+  const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: [{payload : RecipeData}] }) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
@@ -118,11 +180,11 @@ const EmissionDashboard = () => {
     return null;
   };
 
-  const DetailView = ({ recipeData }) => (
+  const DetailView = ({ recipeData }: { recipeData: RecipeData }) => (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <button
-          onClick={() => setSelectedRecipe(null)}
+          onClick={() => setSelectedRecipe(undefined)}
           className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
         >
           <ArrowLeft className="w-4 h-4" /> Back to Overview
@@ -158,7 +220,7 @@ const EmissionDashboard = () => {
             <Tooltip 
               formatter={(value, name, payload) => {
                 const metricName = payload?.payload?.name;
-                return [`${value.toFixed(2)} ${metrics[metricName].unit}`, name];
+                return [typeof value === 'number' ? `${value.toFixed(2)} ${metrics[metricName].unit}` : value, name];
               }}
             />
             <Legend />
@@ -231,7 +293,7 @@ const EmissionDashboard = () => {
                 <BarChart
                   data={transformDataForOverview(data, selectedMetric)}
                   margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                  onClick={handleBarClick}
+                  onClick={(state) => handleBarClick(state)}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
