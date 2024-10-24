@@ -12,7 +12,6 @@ interface Metric {
   unit: string;
   color: { animal: string; plant: string };
 }
-
 interface Metrics {
   [key: string]: Metric;
 }
