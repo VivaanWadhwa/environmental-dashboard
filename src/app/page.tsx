@@ -4,6 +4,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useRouter } from 'next/navigation';
+import useRecipeStore from '../lib/store';
 
 interface Metric {
   animal_col: string;
@@ -43,7 +44,7 @@ interface csvData {
 }
 
 const EmissionDashboard = () => {
-  const [data, setData] = useState<csvData[]>([]);
+  const [data, setData] = useRecipeStore();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const router = useRouter();
@@ -93,6 +94,7 @@ const EmissionDashboard = () => {
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!data) {
       try {
         setLoading(true);
         const response = await fetch('/data/similar_recipes.csv');
@@ -133,9 +135,10 @@ const EmissionDashboard = () => {
       } finally {
         setLoading(false);
       }
+    }
     };
     fetchData();
-  }, []);
+  }, [data, setData]);
 
   const transformDataForOverview = (
     rawData: csvData[],
