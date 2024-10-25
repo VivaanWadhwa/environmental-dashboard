@@ -3,8 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft } from 'lucide-react';
-import Head from 'next/head';
+import { useRouter } from 'next/navigation';
 
 interface Metric {
   animal_col: string;
@@ -12,6 +11,7 @@ interface Metric {
   unit: string;
   color: { animal: string; plant: string };
 }
+
 interface Metrics {
   [key: string]: Metric;
 }
@@ -46,7 +46,7 @@ const EmissionDashboard = () => {
   const [data, setData] = useState<csvData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [selectedRecipe, setSelectedRecipe] = useState<RecipeData>();
+  const router = useRouter();
 
   const metrics: Metrics = {
     "GHG Emission": {
@@ -59,25 +59,25 @@ const EmissionDashboard = () => {
       animal_col: "animal_N lost (g) / 100g",
       plant_col: "plant_N lost (g) / 100g",
       unit: "g/100g",
-      color: { animal: "#ffd43b", plant: "#20c997" }
+      color: { animal: "#ff6b6b", plant: "#51cf66" }
     },
     "Freshwater Withdrawals": {
       animal_col: "animal_Freshwater Withdrawals (L) / 100g",
       plant_col: "plant_Freshwater Withdrawals (L) / 100g",
       unit: "L/100g",
-      color: { animal: "#ff922b", plant: "#339af0" }
+      color: { animal: "#ff6b6b", plant: "#51cf66" }
     },
     "Stress-Weighted Water Use": {
       animal_col: "animal_Stress-Weighted Water Use (L) / 100g",
       plant_col: "plant_Stress-Weighted Water Use (L) / 100g",
       unit: "L/100g",
-      color: { animal: "#f06595", plant: "#845ef7" }
+      color: { animal: "#ff6b6b", plant: "#51cf66" }
     },
     "Land Use": {
       animal_col: "animal_Land Use (m^2) / 100g",
       plant_col: "plant_Land Use (m^2) / 100g",
       unit: "m²/100g",
-      color: { animal: "#e64980", plant: "#3b5bdb" }
+      color: { animal: "#ff6b6b", plant: "#51cf66" }
     }
   };
 
@@ -126,7 +126,7 @@ const EmissionDashboard = () => {
           return rowData;
         });
 
-        setData(parsedData);
+        setData(parsedData.slice(0, -1));
       } catch (err) {
         setError('Error loading data');
         console.error('Error loading data:', err);
@@ -157,101 +157,30 @@ const EmissionDashboard = () => {
       plant_recipe: item.plant_recipe,
     }));
   };
-  
 
-  const transformDataForDetail = (recipeData: csvData) => {
-    return Object.keys(metrics).map(metricName => ({
-      name: metricName,
-      animal: recipeData[metrics[metricName as keyof Metrics].animal_col as keyof csvData],
-      plant: recipeData[metrics[metricName as keyof Metrics].plant_col as keyof csvData],
-      unit: metrics[metricName].unit
-    }));
-  };
 
   const handleBarClick = (data: any) => {
     if (data && data.activePayload && data.activePayload.length) {
-      setSelectedRecipe(data.activePayload[0].payload);
+      // setSelectedRecipe(data.activePayload[0].payload);
+      router.push('/recipe/' + data.activePayload[0].payload.id);
     }
   };
 
   const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: [{payload : RecipeData}] }) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
+      const animal_p_classname = `text-[${metrics[selectedMetric].color.animal}]`;
+      const plant_p_classname = `text-[${metrics[selectedMetric].color.plant}]`;
       return (
         <div className="bg-white p-4 rounded-lg shadow-lg border">
           <p className="font-semibold">{`Recipe ${data.id + 1}`}</p>
-          <p className="text-[#ff6b6b]">{`Animal-based: ${data.animal?.toFixed(2)} ${metrics[selectedMetric].unit}`}</p>
-          <p className="text-[#51cf66]">{`Plant-based: ${data.plant?.toFixed(2)} ${metrics[selectedMetric].unit}`}</p>
+          <p className = {animal_p_classname}>{`Animal-based: ${data.animal?.toFixed(2)} ${metrics[selectedMetric].unit}`}</p>
+          <p className = {plant_p_classname}>{`Plant-based: ${data.plant?.toFixed(2)} ${metrics[selectedMetric].unit}`}</p>
         </div>
       );
     }
     return null;
   };
-
-  const DetailView = ({ recipeData }: { recipeData: RecipeData }) => (
-    <div className="space-y-6">
-      <Head>
-        <title>Recipe Comparison - {recipeData.animal_recipe} vs {recipeData.plant_recipe}</title>
-      </Head>
-      <div className="flex items-center gap-4">
-        <button
-          onClick={() => setSelectedRecipe(undefined)}
-          className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-        >
-          <ArrowLeft className="w-4 h-4" /> Back to Overview
-        </button>
-        <h3 className="text-xl font-semibold">Detailed Comparison</h3>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        <Card className="bg-red-50">
-          <CardContent className="pt-6">
-            <h4 className="text-lg font-semibold text-red-600 mb-2">Animal-based Recipe</h4>
-            <p className="text-gray-800">{recipeData.animal_recipe}</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-green-50">
-          <CardContent className="pt-6">
-            <h4 className="text-lg font-semibold text-green-600 mb-2">Plant-based Recipe</h4>
-            <p className="text-gray-800">{recipeData.plant_recipe}</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="h-[400px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={transformDataForDetail(data[recipeData.id])}
-            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-            layout="vertical"
-          >
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis type="number" />
-            <YAxis type="category" dataKey="name" width={150} />
-            <Tooltip 
-              formatter={(value, name, payload) => {
-                const metricName = payload?.payload?.name;
-                return [typeof value === 'number' ? `${value.toFixed(2)} ${metrics[metricName].unit}` : value, name];
-              }}
-            />
-            <Legend />
-            <Bar
-              dataKey="animal"
-              name="Animal-based"
-              fill= {metrics[selectedMetric].color.animal}
-              radius={[0, 4, 4, 0]}
-            />
-            <Bar
-              dataKey="plant"
-              name="Plant-based"
-              fill={metrics[selectedMetric].color.plant}
-              radius={[0, 4, 4, 0]}
-            />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
-  );
 
   return (
     <Card className="h-full w-full">
@@ -281,9 +210,6 @@ const EmissionDashboard = () => {
           <p>{error}</p>
         ) : (
           <div>
-            {selectedRecipe ? (
-              <DetailView recipeData={selectedRecipe} />
-            ) : (
               <div>
                 <p className="text-center mb-4">
                   Hover over the chart to explore emissions data by recipe type.
@@ -305,7 +231,6 @@ const EmissionDashboard = () => {
                   {metricDescriptions[selectedMetric]}
                 </p>
               </div>
-            )}
           </div>
         )}
       </CardContent>
