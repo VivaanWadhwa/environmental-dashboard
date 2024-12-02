@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
+import Papa from 'papaparse';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -98,35 +99,33 @@ const EmissionDashboard = () => {
         const response = await fetch('/data/similar_recipes.csv');
         const csvText = await response.text();
         
-        const rows = csvText.split('\n');
-        const headers = rows[0].split(',');
-        const parsedData: csvData[] = rows.slice(1).map(row => {
-          const values = row.split(',');
-          const rowData: csvData = {
-            animal_recipe: '',
-            animal_recipe_ID: '',
-            plant_recipe: '',
-            plant_recipe_ID: '',
-            animal_GHG_Emission: 0,
-            plant_GHG_Emission: 0,
-            animal_N_lost: 0,
-            plant_N_lost: 0,
-            animal_Freshwater_Withdrawals: 0,
-            plant_Freshwater_Withdrawals: 0,
-            animal_Stress_Weighted_Water_Use: 0,
-            plant_Stress_Weighted_Water_Use: 0,
-            animal_Land_Use: 0,
-            plant_Land_Use: 0,
-          };
-          headers.forEach((header, index) => {
-            const value = values[index];
-            const parsedValue = parseFloat(value);
-            (rowData[header.trim() as keyof csvData] as unknown) = isNaN(parsedValue) ? value : parsedValue;
-          });
-          return rowData;
+        Papa.parse(csvText, {
+          header: true,
+          dynamicTyping: true,
+          complete: (results) => {
+            const parsedData: csvData[] = results.data.map((row: any) => ({
+              animal_recipe: row.animal_recipe || '',
+              animal_recipe_ID: row.animal_recipe_ID || '',
+              plant_recipe: row.plant_recipe || '',
+              plant_recipe_ID: row.plant_recipe_ID || '',
+              animal_GHG_Emission: row.animal_GHG_Emission || 0,
+              plant_GHG_Emission: row.plant_GHG_Emission || 0,
+              animal_N_lost: row.animal_N_lost || 0,
+              plant_N_lost: row.plant_N_lost || 0,
+              animal_Freshwater_Withdrawals: row.animal_Freshwater_Withdrawals || 0,
+              plant_Freshwater_Withdrawals: row.plant_Freshwater_Withdrawals || 0,
+              animal_Stress_Weighted_Water_Use: row.animal_Stress_Weighted_Water_Use || 0,
+              plant_Stress_Weighted_Water_Use: row.plant_Stress_Weighted_Water_Use || 0,
+              animal_Land_Use: row.animal_Land_Use || 0,
+              plant_Land_Use: row.plant_Land_Use || 0,
+            }));
+            setData(parsedData);
+          },
+          error: (error: any) => {
+            setError('Error parsing CSV data');
+            console.error('Error parsing CSV data:', error);
+          }
         });
-
-        setData(parsedData.slice(0, -1));
       } catch (err) {
         setError('Error loading data');
         console.error('Error loading data:', err);

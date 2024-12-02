@@ -78,7 +78,7 @@ const RecipePage = ({ params }: RecipePageProps) => {
 
   // Normalize values between 0 and 1
   const normalizeValue = (value: number) => {
-    if (value < 1) return Math.log(1/value);
+    // if (value < 1) return Math.log(1/value);
     return Math.log(value) 
   };
 
