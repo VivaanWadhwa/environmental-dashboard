@@ -12,12 +12,7 @@ import {
   PolarRadiusAxis,
   Radar,
   ResponsiveContainer,
-  Legend,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
+  Legend
 } from 'recharts';
 
 interface RecipePageProps {
