@@ -79,7 +79,7 @@ const RecipePage = ({ params }: RecipePageProps) => {
   // Normalize values between 0 and 1
   const normalizeValue = (value: number) => {
     // if (value < 1) return Math.log(1/value);
-    return Math.log(value) 
+    return Math.log(value); 
   };
 
   useEffect(() => {
@@ -192,33 +192,33 @@ const RecipePage = ({ params }: RecipePageProps) => {
             </p>
             <div className="h-[400px]">
               <ResponsiveContainer width="100%" height="100%">
-                <RadarChart data={radarData}>
-                  <PolarGrid />
-                  <PolarAngleAxis dataKey="metric" />
-                  <PolarRadiusAxis domain={[0, 1]} />
-                  <Radar
-                    name="Animal-Based"
-                    dataKey="animalNormalized"
-                    stroke="#ef4444"
-                    fill="#ef4444"
-                    fillOpacity={0.3}
-                  />
-                  <Radar
-                    name="Plant-Based"
-                    dataKey="plantNormalized"
-                    stroke="#22c55e"
-                    fill="#22c55e"
-                    fillOpacity={0.3}
-                  />
-                  <Legend />
-                </RadarChart>
+              <RadarChart data={radarData}>
+                <PolarGrid />
+                <PolarAngleAxis dataKey="metric" />
+                <PolarRadiusAxis domain={[0, 1]} tick={false} />
+                <Radar
+                name="Animal-Based"
+                dataKey="animalNormalized"
+                stroke="#ef4444"
+                fill="#ef4444"
+                fillOpacity={0.3}
+                />
+                <Radar
+                name="Plant-Based"
+                dataKey="plantNormalized"
+                stroke="#22c55e"
+                fill="#22c55e"
+                fillOpacity={0.3}
+                />
+                <Legend />
+              </RadarChart>
               </ResponsiveContainer>
             </div>
           {/* </CardContent>
         </Card>
         {/* <Card> */}
           {/* <CardContent> */}
-            <div className="h-[400px]">
+            {/* <div className="h-[400px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={radarData}
@@ -229,12 +229,12 @@ const RecipePage = ({ params }: RecipePageProps) => {
                   <XAxis type="number" />
                   <YAxis dataKey="metric" type="category" />
                   {/* <Tooltip content={CustomTooltip} /> */}
-                  <Legend />
+                  {/* <Legend />
                   <Bar dataKey="animalNormalized" name="Animal-Based" fill="#ef4444" />
                   <Bar dataKey="plantNormalized" name="Plant-Based" fill="#22c55e" />
                 </BarChart>
               </ResponsiveContainer>
-            </div>
+            </div> */} 
           </CardContent>
         </Card>
 

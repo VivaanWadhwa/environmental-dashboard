@@ -9,6 +9,8 @@ import { useRouter } from 'next/navigation';
 interface Metric {
   animal_col: string;
   plant_col: string;
+  animal_col_bar?: string;
+  plant_col_bar?: string;
   unit: string;
   color: { animal: string; plant: string };
 }
@@ -53,30 +55,40 @@ const EmissionDashboard = () => {
     "GHG Emission": {
       animal_col: "animal_GHG Emission (g) / 100g",
       plant_col: "plant_GHG Emission (g) / 100g",
+      animal_col_bar: "animal_GHG_Emission",
+      plant_col_bar: "plant_GHG_Emission",
       unit: "g/100g",
       color: { animal: "#ff6b6b", plant: "#51cf66" }
     },
     "Nitrogen Lost": {
       animal_col: "animal_N lost (g) / 100g",
       plant_col: "plant_N lost (g) / 100g",
+      animal_col_bar: "animal_N_lost",
+      plant_col_bar: "plant_N_lost",
       unit: "g/100g",
       color: { animal: "#ff6b6b", plant: "#51cf66" }
     },
     "Freshwater Withdrawals": {
       animal_col: "animal_Freshwater Withdrawals (L) / 100g",
       plant_col: "plant_Freshwater Withdrawals (L) / 100g",
+      animal_col_bar: "animal_Freshwater_Withdrawals",
+      plant_col_bar: "plant_Freshwater_Withdrawals",
       unit: "L/100g",
       color: { animal: "#ff6b6b", plant: "#51cf66" }
     },
     "Stress-Weighted Water Use": {
       animal_col: "animal_Stress-Weighted Water Use (L) / 100g",
       plant_col: "plant_Stress-Weighted Water Use (L) / 100g",
+      animal_col_bar: "animal_Stress_Weighted_Water_Use",
+      plant_col_bar: "plant_Stress_Weighted_Water_Use",
       unit: "L/100g",
       color: { animal: "#ff6b6b", plant: "#51cf66" }
     },
     "Land Use": {
       animal_col: "animal_Land Use (m^2) / 100g",
       plant_col: "plant_Land Use (m^2) / 100g",
+      animal_col_bar: "animal_Land_Use",
+      plant_col_bar: "plant_Land_Use",
       unit: "m²/100g",
       color: { animal: "#ff6b6b", plant: "#51cf66" }
     }
@@ -103,29 +115,35 @@ const EmissionDashboard = () => {
           header: true,
           dynamicTyping: true,
           complete: (results) => {
-            const parsedData: csvData[] = results.data.map((row: any) => ({
-              animal_recipe: row.animal_recipe || '',
-              animal_recipe_ID: row.animal_recipe_ID || '',
-              plant_recipe: row.plant_recipe || '',
-              plant_recipe_ID: row.plant_recipe_ID || '',
-              animal_GHG_Emission: row.animal_GHG_Emission || 0,
-              plant_GHG_Emission: row.plant_GHG_Emission || 0,
-              animal_N_lost: row.animal_N_lost || 0,
-              plant_N_lost: row.plant_N_lost || 0,
-              animal_Freshwater_Withdrawals: row.animal_Freshwater_Withdrawals || 0,
-              plant_Freshwater_Withdrawals: row.plant_Freshwater_Withdrawals || 0,
-              animal_Stress_Weighted_Water_Use: row.animal_Stress_Weighted_Water_Use || 0,
-              plant_Stress_Weighted_Water_Use: row.plant_Stress_Weighted_Water_Use || 0,
-              animal_Land_Use: row.animal_Land_Use || 0,
-              plant_Land_Use: row.plant_Land_Use || 0,
-            }));
-            setData(parsedData);
+            try {
+              const parsedData = results.data.map((row: any) => ({
+                animal_recipe: row["animal_recipe"] || '',
+                animal_recipe_ID: row["animal_recipe_ID"] || '',
+                plant_recipe: row["plant_recipe"] || '',
+                plant_recipe_ID: row["plant_recipe_ID"] || '',
+                animal_GHG_Emission: row["animal_GHG Emission (g) / 100g"] || 0,
+                plant_GHG_Emission: row["plant_GHG Emission (g) / 100g"] || 0,
+                animal_N_lost: row["animal_N lost (g) / 100g"] || 0,
+                plant_N_lost: row["plant_N lost (g) / 100g"] || 0,
+                animal_Freshwater_Withdrawals: row["animal_Freshwater Withdrawals (L) / 100g"] || 0,
+                plant_Freshwater_Withdrawals: row["plant_Freshwater Withdrawals (L) / 100g"] || 0,
+                animal_Stress_Weighted_Water_Use: row["animal_Stress-Weighted Water Use (L) / 100g"] || 0,
+                plant_Stress_Weighted_Water_Use: row["plant_Stress-Weighted Water Use (L) / 100g"] || 0,
+                animal_Land_Use: row["animal_Land Use (m^2) / 100g"] || 0,
+                plant_Land_Use: row["plant_Land Use (m^2) / 100g"] || 0,
+              }));
+              setData(parsedData.slice(0, 25));
+            } catch (error) {
+              console.error('Error processing parsed data:', error);
+              setError('Error processing parsed data');
+            }
           },
-          error: (error: any) => {
-            setError('Error parsing CSV data');
+          error: (error : any) => {
             console.error('Error parsing CSV data:', error);
-          }
+            setError('Error parsing CSV data');
+          },
         });
+        
       } catch (err) {
         setError('Error loading data');
         console.error('Error loading data:', err);
@@ -142,20 +160,58 @@ const EmissionDashboard = () => {
   ): Array<{
     id: number;
     name: string;
-    animal: number;
-    plant: number;
+    animal: number | string;
+    plant: number | string;
     animal_recipe: string;
     plant_recipe: string;
   }> => {
-    return rawData.map((item, index) => ({
-      id: index,
-      name: '', // You can set this value based on your requirements
-      animal: parseFloat(item[metrics[metric].animal_col as keyof csvData] as unknown as string),
-      plant: parseFloat(item[metrics[metric].plant_col as keyof csvData] as unknown as string),
-      animal_recipe: item.animal_recipe,
-      plant_recipe: item.plant_recipe,
-    }));
+    console.log("rawData:");
+    console.log(rawData);
+  
+    const ret_data = rawData.map((item, index) => {
+      // Ensure valid metric keys are provided
+      const animalCol = metrics[metric]?.animal_col_bar as keyof csvData;
+      const plantCol = metrics[metric]?.plant_col_bar as keyof csvData;
+  
+      console.log("animalCol:", animalCol);
+      if (!animalCol || !plantCol) {
+        console.error(`Invalid metric configuration for: ${metric}`);
+        return {
+          id: index,
+          name: "",
+          animal: 0,
+          plant: 0,
+          animal_recipe: item.animal_recipe || "",
+          plant_recipe: item.plant_recipe || "",
+        };
+      }
+  
+      // Access the data using validated column names
+      const animalValue = item[animalCol];
+      const plantValue = item[plantCol];
+  
+      if (animalValue === undefined || plantValue === undefined) {
+        console.error(
+          `Data missing for metric columns: ${animalCol} or ${plantCol} at index ${index}`
+        );
+      }
+  
+      return {
+        id: index,
+        name: "", // Customize this based on your requirements
+        animal: animalValue || 0, // Use 0 if value is missing
+        plant: plantValue || 0, // Use 0 if value is missing
+        animal_recipe: item.animal_recipe || "",
+        plant_recipe: item.plant_recipe || "",
+      };
+    });
+  
+    console.log("Transformed Data:");
+    console.log(ret_data);
+  
+    return ret_data;
   };
+  
 
 
   const handleBarClick = (data: any) => {
